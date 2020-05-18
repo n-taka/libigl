@@ -328,18 +328,7 @@ IGL_INLINE bool readPLY(
           }
         }
       }
-<<<<<<< HEAD
-      if(has_colors)
-      {
-        // normalize
-        VC[j][0] = v.r / 255.;
-        VC[j][1] = v.g / 255.;
-        VC[j][2] = v.b / 255.;
-      }
-      if(has_texture_coords)
-=======
       else if(e.name == "face" ) // found face
->>>>>>> upstream/master
       {
         for (auto p : e.properties)
         {

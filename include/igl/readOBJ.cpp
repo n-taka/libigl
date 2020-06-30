@@ -91,7 +91,8 @@ IGL_INLINE bool igl::readOBJ(
   std::vector<std::tuple<std::string, Index, Index >> &FM)
 {
   std::vector<std::vector<Scalar > > VC;
-  return igl::readOBJ(obj_file,V,TC,N,VC,F,FTC,FN,FM);
+  std::vector<Index > FG;
+  return igl::readOBJ(obj_file,V,TC,N,VC,F,FTC,FN,FG,FM);
 }
 
 template <typename Scalar, typename Index>

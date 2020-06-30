@@ -64,6 +64,7 @@ IGL_INLINE bool igl::readOBJ(
   std::vector<std::vector<Index > > & F,
   std::vector<std::vector<Index > > & FTC,
   std::vector<std::vector<Index > > & FN,
+  std::vector<Index > & FG,
   std::vector<std::tuple<std::string, Index, Index >> &FM)
 {
   // Open file, and check for error
@@ -74,7 +75,7 @@ IGL_INLINE bool igl::readOBJ(
             obj_file_name.c_str());
     return false;
   }
-  return igl::readOBJ(obj_file,V,TC,N,VC,F,FTC,FN,FM);
+  return igl::readOBJ(obj_file,V,TC,N,VC,F,FTC,FN,FG,FM);
 }
 
 template <typename Scalar, typename Index>
@@ -102,6 +103,7 @@ IGL_INLINE bool igl::readOBJ(
   std::vector<std::vector<Index > > & F,
   std::vector<std::vector<Index > > & FTC,
   std::vector<std::vector<Index > > & FN,
+  std::vector<Index > & FG,
   std::vector<std::tuple<std::string, Index, Index >> &FM)
 {
 
@@ -113,6 +115,7 @@ IGL_INLINE bool igl::readOBJ(
   F.clear();
   FTC.clear();
   FN.clear();
+  FG.clear();
 
   // variables and constants to assist parsing the .obj file
   // Constant strings to compare against
@@ -120,6 +123,9 @@ IGL_INLINE bool igl::readOBJ(
   std::string vn("vn");
   std::string vt("vt");
   std::string f("f");
+  std::string g("g");
+  std::map<std::string, Index> groupStrToIndex;
+  Index currentGroupIdx = 0;
   std::string MRGB("#MRGB");
   std::string tic_tac_toe("#");
 
@@ -262,6 +268,7 @@ IGL_INLINE bool igl::readOBJ(
           F.push_back(f);
           FTC.push_back(ftc);
           FN.push_back(fn);
+          FG.push_back(currentGroupIdx);
           current_face_no++;
         }else
         {
@@ -270,6 +277,16 @@ IGL_INLINE bool igl::readOBJ(
           fclose(obj_file);
           return false;
         }
+      }else if(type == g)
+      {
+        char body[IGL_LINE_MAX];
+				int count = sscanf(l, "%s\n", body);
+        std::string groupStr(body);
+        if(groupStrToIndex.find(groupStr) == groupStrToIndex.end())
+        {
+          groupStrToIndex[groupStr] = groupStrToIndex.size()+1;
+        }
+        currentGroupIdx = groupStrToIndex.at(groupStr);
       }else if(strlen(type) >= 1 && strcmp("usemtl",type)==0 )
       {
         if(FMwasinit){
@@ -288,7 +305,6 @@ IGL_INLINE bool igl::readOBJ(
 				C.append(body);
 			}
       else if(strlen(type) >= 1 && (type[0] == '#' ||
-            type[0] == 'g'  ||
             type[0] == 's'  ||
             strcmp("mtllib",type)==0))
       {

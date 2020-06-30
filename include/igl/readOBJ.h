@@ -88,6 +88,7 @@ namespace igl
     std::vector<std::vector<Index > > & F,
     std::vector<std::vector<Index > > & FTC,
     std::vector<std::vector<Index > > & FN,
+    std::vector<Index > & FG,
     std::vector<std::tuple<std::string, Index, Index >> &FM);
   // Inputs:
   //   obj_file  pointer to already opened .obj file 
@@ -114,6 +115,7 @@ namespace igl
     std::vector<std::vector<Index > > & F,
     std::vector<std::vector<Index > > & FTC,
     std::vector<std::vector<Index > > & FN,
+    std::vector<Index > & FG,
     std::vector<std::tuple<std::string, Index, Index >> &FM);
   // Just V and F
   template <typename Scalar, typename Index>

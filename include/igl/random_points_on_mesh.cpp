@@ -38,13 +38,9 @@ IGL_INLINE void igl::random_points_on_mesh(
   assert(Cmax > 0 && "Total surface area should be positive");
   // Why is this more accurate than `C /= C(C.size()-1)` ?
   for(int i = 0;i<C.size();i++) { C(i) = C(i)/Cmax; }
-  const VectorXs R = (VectorXs::Random(n,1).array() + 1.)/2.;
+  // R.maxCoeff() must NOT equal to 1
+  const VectorXs R = (VectorXs::Random(n,1).array() + 1.)/2.0000001;
   assert(R.minCoeff() >= 0);
-  if(R.maxCoeff() == 1)
-  {
-    // this is very ugly solution...
-    R *= 0.99999999999;
-  }
   assert(R.maxCoeff() < 1);
   histc(R,C,FI);
   const VectorXs S = (VectorXs::Random(n,1).array() + 1.)/2.;

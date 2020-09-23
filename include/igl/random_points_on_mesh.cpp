@@ -40,7 +40,12 @@ IGL_INLINE void igl::random_points_on_mesh(
   for(int i = 0;i<C.size();i++) { C(i) = C(i)/Cmax; }
   const VectorXs R = (VectorXs::Random(n,1).array() + 1.)/2.;
   assert(R.minCoeff() >= 0);
-  assert(R.maxCoeff() <= 1);
+  if(R.maxCoeff() == 1)
+  {
+    // this is very ugly solution...
+    R *= 0.99999999999;
+  }
+  assert(R.maxCoeff() < 1);
   histc(R,C,FI);
   const VectorXs S = (VectorXs::Random(n,1).array() + 1.)/2.;
   const VectorXs T = (VectorXs::Random(n,1).array() + 1.)/2.;

@@ -77,7 +77,7 @@ endfunction()
 function(igl_download_embree)
 	igl_download_project(embree
 		GIT_REPOSITORY https://github.com/embree/embree.git
-		GIT_TAG        v3.5.2
+		GIT_TAG        v3.12.1
 		${LIBIGL_BRANCH_OPTIONS}
 	)
 endfunction()
@@ -94,7 +94,7 @@ endfunction()
 function(igl_download_glfw)
 	igl_download_project(glfw
 		GIT_REPOSITORY https://github.com/glfw/glfw.git
-		GIT_TAG        3.3
+		GIT_TAG        3327050ca66ad34426a82c217c2d60ced61526b7
 		${LIBIGL_BRANCH_OPTIONS}
 	)
 endfunction()
@@ -193,6 +193,6 @@ function(igl_download_tutorial_data)
 	igl_download_project_aux(tutorial_data
 		"${LIBIGL_EXTERNAL}/../tutorial/data"
 		GIT_REPOSITORY https://github.com/libigl/libigl-tutorial-data
-		GIT_TAG        37d4e836054c9c2d2125a817c489ed8e07cd56fc
+		GIT_TAG        c1f9ede366d02e3531ecbaec5e3769312f31cccd
 	)
 endfunction()

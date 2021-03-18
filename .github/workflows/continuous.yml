@@ -3,11 +3,11 @@ name: Build
 on:
   push:
     branches:
-      - master
+      - main
       - stable
   pull_request:
     branches:
-      - master
+      - main
       - stable
 
 env:
@@ -20,7 +20,7 @@ jobs:
   ####################
 
   Unix:
-    name: ${{ matrix.name }} (${{ matrix.config }}, ${{ matrix.static }})
+    name: ${{ matrix.name }} (${{ matrix.config }}, ${{ fromJSON('["HeaderOnly", "Static"]')[matrix.static == 'ON'] }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
@@ -94,6 +94,7 @@ jobs:
   ####################
 
   Windows:
+    name: Windows (${{ matrix.config }}, ${{ fromJSON('["HeaderOnly", "Static"]')[matrix.static == 'ON'] }})
     runs-on: windows-2019
     env:
       CC: cl.exe
@@ -110,9 +111,15 @@ jobs:
           fetch-depth: 10
       - uses: seanmiddleditch/gha-setup-ninja@master
 
+      - name: Setup Conda
+        uses: conda-incubator/setup-miniconda@v2
+        with:
+          activate-environment: libigl-cgal
+          environment-file: cmake/libigl-cgal.yml
+          auto-activate-base: false
+
       - name: Set env
         run: |
-          echo "BOOST_ROOT=$env:BOOST_ROOT_1_72_0" >> ${env:GITHUB_ENV}
           echo "appdata=$env:LOCALAPPDATA" >> ${env:GITHUB_ENV}
 
       - name: Cache build

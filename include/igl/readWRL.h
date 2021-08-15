@@ -40,6 +40,11 @@ namespace igl
   //   wrl_file  closed file
   template <typename Scalar, typename Index>
   IGL_INLINE bool readWRL(
+    FILE * wrl_file,
+    std::vector<std::vector<Scalar > > & V,
+    std::vector<std::vector<Index > > & F);
+  template <typename Scalar, typename Index>
+  IGL_INLINE bool readWRL(
     const std::string wrl_file_name,
     std::vector<std::vector<Scalar > > & V,
     std::vector<std::vector<Index > > & F,

@@ -12,6 +12,59 @@
 namespace igl
 {
 
+template <typename T>
+IGL_INLINE bool tinyply_buffer_triangulate(
+  std::shared_ptr<tinyply::PlyData> & faces,
+  std::shared_ptr<tinyply::PlyData> & faceData)
+{
+  // get faces as std::vector<std::vector>, count #triangles
+  std::vector<std::vector<T>> fVec(faces->count);
+  int triCount = 0;
+  uint8_t *dataCursor = faces->buffer.get();
+  for(int count=0;count<faces->count;++count)
+  {
+    const auto& nGon = faces->list_indices.at(count);
+    triCount += (nGon - 2);
+
+    std::vector<T> indices(nGon);
+    memcpy(&(indices[0]), dataCursor, sizeof(T)*nGon);
+    dataCursor += (sizeof(T)*nGon);
+    fVec.at(count) = indices;
+  }
+
+  // triangulate
+  std::vector<std::vector<T>> triVec(triCount);
+  size_t triIndex = 0;
+  for(const auto& f : fVec)
+  {
+    for(int tri=0;tri<f.size()-2;++tri)
+    {
+      triVec.at(triIndex).push_back(f.at(tri));
+      triVec.at(triIndex).push_back(f.at((tri+1)%f.size()));
+      triVec.at(triIndex).push_back(f.back());
+      triIndex++;
+    }
+  }
+
+  // update plyData
+  faces->count = triCount;
+  faces->list_indices = std::vector<size_t>(triCount, 3);
+
+  // update Buffer
+  faces->buffer = tinyply::Buffer(triCount * 3 * sizeof(T));
+  dataCursor = faces->buffer.get();
+  for(int count=0;count<triCount;++count)
+  {
+    memcpy(dataCursor, &(triVec.at(count)[0]), sizeof(T)*triVec.at(count).size());
+    dataCursor += (sizeof(T)*triVec.at(count).size());
+  }
+
+  // kazutaka
+  // [todo] faceData
+
+  return true;
+}
+
 template <typename T, typename Derived>
 IGL_INLINE bool _tinyply_buffer_to_matrix(
   tinyply::PlyData & D,
@@ -402,6 +455,19 @@ IGL_INLINE bool readPLY(
 
   if (!texcoords || !tinyply_buffer_to_matrix(*texcoords,UV,texcoords->count,2) ) {
     UV.resize(0,0);
+  }
+
+  // (kazutaka) 2020.12.28
+  if(faces)
+  {
+    switch (faces->t)
+    {
+    case tinyply::Type::INT16:   tinyply_buffer_triangulate<int16_t>(faces, _face_data); break;
+    case tinyply::Type::UINT16:  tinyply_buffer_triangulate<uint16_t>(faces, _face_data); break;
+    case tinyply::Type::INT32:   tinyply_buffer_triangulate<int32_t>(faces, _face_data); break;
+    case tinyply::Type::UINT32:  tinyply_buffer_triangulate<uint32_t>(faces, _face_data); break;
+    default: break;
+    }
   }
 
   //HACK: Unfortunately, tinyply doesn't store list size as a separate variable

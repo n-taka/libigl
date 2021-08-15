@@ -79,10 +79,23 @@ namespace igl
     std::vector<std::tuple<std::string, Index, Index >> &FM
     );
 
+  template <typename Scalar, typename Index>
+  IGL_INLINE bool readOBJ(
+    const std::string obj_file_name, 
+    std::vector<std::vector<Scalar > > & V,
+    std::vector<std::vector<Scalar > > & TC,
+    std::vector<std::vector<Scalar > > & N,
+    std::vector<std::vector<Scalar > > & VC,
+    std::vector<std::vector<Index > > & F,
+    std::vector<std::vector<Index > > & FTC,
+    std::vector<std::vector<Index > > & FN,
+    std::vector<Index > & FG,
+    std::vector<std::tuple<std::string, Index, Index >> &FM);
   // Inputs:
   //   obj_file  pointer to already opened .obj file 
   // Outputs:
   //   obj_file  closed file
+  //   VC  double matrix of vertex color  #V by 3 ([0.0, 1.0])
   template <typename Scalar, typename Index>
   IGL_INLINE bool readOBJ(
     FILE * obj_file,
@@ -92,6 +105,18 @@ namespace igl
     std::vector<std::vector<Index > > & F,
     std::vector<std::vector<Index > > & FTC,
     std::vector<std::vector<Index > > & FN,
+    std::vector<std::tuple<std::string, Index, Index >> &FM);
+  template <typename Scalar, typename Index>
+  IGL_INLINE bool readOBJ(
+    FILE * obj_file,
+    std::vector<std::vector<Scalar > > & V,
+    std::vector<std::vector<Scalar > > & TC,
+    std::vector<std::vector<Scalar > > & N,
+    std::vector<std::vector<Scalar > > & VC,
+    std::vector<std::vector<Index > > & F,
+    std::vector<std::vector<Index > > & FTC,
+    std::vector<std::vector<Index > > & FN,
+    std::vector<Index > & FG,
     std::vector<std::tuple<std::string, Index, Index >> &FM);
   // Just V and F
   template <typename Scalar, typename Index>

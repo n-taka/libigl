@@ -1,6 +1,6 @@
 // This file is part of libigl, a simple c++ geometry processing library.
 //
-// Copyright (C) 2013 Alec Jacobson <alecjacobson@gmail.com>
+// Copyright (C) 2013 Alec Jacobson <alecjacobson@gmail.com> 
 //
 // This Source Code Form is subject to the terms of the Mozilla Public License
 // v. 2.0. If a copy of the MPL was not distributed with this file, You can
@@ -52,6 +52,24 @@ IGL_INLINE bool igl::readOBJ(
   std::vector<std::vector<Index > > & FN,
   std::vector<std::tuple<std::string, Index, Index >> &FM)
 {
+  std::vector<std::vector<Scalar > > VC;
+  std::vector<Index > FG;
+  return igl::readOBJ(obj_file_name,V,TC,N,VC,F,FTC,FN,FG,FM);
+}
+
+template <typename Scalar, typename Index>
+IGL_INLINE bool igl::readOBJ(
+  const std::string obj_file_name,
+  std::vector<std::vector<Scalar > > & V,
+  std::vector<std::vector<Scalar > > & TC,
+  std::vector<std::vector<Scalar > > & N,
+  std::vector<std::vector<Scalar > > & VC,
+  std::vector<std::vector<Index > > & F,
+  std::vector<std::vector<Index > > & FTC,
+  std::vector<std::vector<Index > > & FN,
+  std::vector<Index > & FG,
+  std::vector<std::tuple<std::string, Index, Index >> &FM)
+{
   // Open file, and check for error
   FILE * obj_file = fopen(obj_file_name.c_str(),"r");
   if(NULL==obj_file)
@@ -60,7 +78,7 @@ IGL_INLINE bool igl::readOBJ(
             obj_file_name.c_str());
     return false;
   }
-  return igl::readOBJ(obj_file,V,TC,N,F,FTC,FN,FM);
+  return igl::readOBJ(obj_file,V,TC,N,VC,F,FTC,FN,FG,FM);
 }
 
 template <typename Scalar, typename Index>
@@ -74,13 +92,34 @@ IGL_INLINE bool igl::readOBJ(
   std::vector<std::vector<Index > > & FN,
   std::vector<std::tuple<std::string, Index, Index >> &FM)
 {
+  std::vector<std::vector<Scalar > > VC;
+  std::vector<Index > FG;
+  return igl::readOBJ(obj_file,V,TC,N,VC,F,FTC,FN,FG,FM);
+}
+
+template <typename Scalar, typename Index>
+IGL_INLINE bool igl::readOBJ(
+  FILE * obj_file,
+  std::vector<std::vector<Scalar > > & V,
+  std::vector<std::vector<Scalar > > & TC,
+  std::vector<std::vector<Scalar > > & N,
+  std::vector<std::vector<Scalar > > & VC,
+  std::vector<std::vector<Index > > & F,
+  std::vector<std::vector<Index > > & FTC,
+  std::vector<std::vector<Index > > & FN,
+  std::vector<Index > & FG,
+  std::vector<std::tuple<std::string, Index, Index >> &FM)
+{
+
   // File open was successful so clear outputs
   V.clear();
   TC.clear();
   N.clear();
+  VC.clear();
   F.clear();
   FTC.clear();
   FN.clear();
+  FG.clear();
 
   // variables and constants to assist parsing the .obj file
   // Constant strings to compare against
@@ -88,7 +127,15 @@ IGL_INLINE bool igl::readOBJ(
   std::string vn("vn");
   std::string vt("vt");
   std::string f("f");
+  std::string g("g");
+  std::map<std::string, Index> groupStrToIndex;
+  Index currentGroupIdx = 0;
+  std::string MRGB("#MRGB");
   std::string tic_tac_toe("#");
+
+  // string for ZBrush style vertex color
+  std::string C("");
+
 #ifndef IGL_LINE_MAX
 #  define IGL_LINE_MAX 2048
 #endif
@@ -225,6 +272,7 @@ IGL_INLINE bool igl::readOBJ(
           F.push_back(f);
           FTC.push_back(ftc);
           FN.push_back(fn);
+          FG.push_back(currentGroupIdx);
           current_face_no++;
         }else
         {
@@ -233,6 +281,16 @@ IGL_INLINE bool igl::readOBJ(
           fclose(obj_file);
           return false;
         }
+      }else if(type == g)
+      {
+        char body[IGL_LINE_MAX];
+				int count = sscanf(l, "%s\n", body);
+        std::string groupStr(body);
+        if(groupStrToIndex.find(groupStr) == groupStrToIndex.end())
+        {
+          groupStrToIndex[groupStr] = groupStrToIndex.size()+1;
+        }
+        currentGroupIdx = groupStrToIndex.at(groupStr);
       }else if(strlen(type) >= 1 && strcmp("usemtl",type)==0 )
       {
         if(FMwasinit){
@@ -244,8 +302,13 @@ IGL_INLINE bool igl::readOBJ(
         }
         sscanf(l, "%s\n", currentmaterialref);
       }
+      else if (strlen(type) >= 1 && type == MRGB)
+			{
+				char body[IGL_LINE_MAX];
+				int count = sscanf(l, "%s\n", body);
+				C.append(body);
+			}
       else if(strlen(type) >= 1 && (type[0] == '#' ||
-            type[0] == 'g'  ||
             type[0] == 's'  ||
             strcmp("mtllib",type)==0))
       {
@@ -268,8 +331,23 @@ IGL_INLINE bool igl::readOBJ(
     FM.push_back(std::make_tuple(currentmaterialref,previous_face_no,current_face_no-1));
   fclose(obj_file);
 
+  // convert string to vertex color
+  VC.reserve(V.size());
+	if (C.length() > 0)
+	{
+		for (int v = 0; v < C.length()/8; ++v)
+		{
+      const Scalar m = std::stoi(C.substr(v * 8 + 0 * 2, 2), nullptr, 16) / 255.;
+      const Scalar r = std::stoi(C.substr(v * 8 + 1 * 2, 2), nullptr, 16) / 255.;
+      const Scalar g = std::stoi(C.substr(v * 8 + 2 * 2, 2), nullptr, 16) / 255.;
+      const Scalar b = std::stoi(C.substr(v * 8 + 3 * 2, 2), nullptr, 16) / 255.;
+      VC.push_back(std::vector<Scalar>({r,g,b}));
+		}
+	}
+
   assert(F.size() == FN.size());
   assert(F.size() == FTC.size());
+  assert(V.size() == VC.size());
 
   return true;
 }

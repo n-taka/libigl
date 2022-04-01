@@ -262,7 +262,7 @@ IGL_INLINE bool igl::writeOBJ(
 
     for(const auto& vi : face)
     {
-      s<<" "<<vi; 
+      s<<" "<<(vi+1); 
     }
     s<<"\n";
   }

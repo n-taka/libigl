@@ -34,8 +34,10 @@ function(cgal_import_target)
     include(boost)
 
     ignore_package(GMP 5.0.1)
-    set(GMP_INCLUDE_DIR "")
+    set(GMP_INCLUDE_DIR ${gmp_INCLUDE_DIR})
     set(GMP_LIBRARIES gmp::gmp)
+    set(GMPXX_INCLUDE_DIR ${GMP_INCLUDE_DIR})
+    set(GMPXX_LIBRARIES ${GMP_LIBRARIES})
 
     ignore_package(MPFR 3.0.0)
     set(MPFR_INCLUDE_DIR "")
@@ -48,6 +50,8 @@ function(cgal_import_target)
     # Prefer Config mode before Module mode to prevent CGAL from loading its own FindXXX.cmake
     set(CMAKE_FIND_PACKAGE_PREFER_CONFIG TRUE)
 
+    # https://stackoverflow.com/a/71714947/148668
+    set(CGAL_DATA_DIR "unspecified")
     find_package(CGAL CONFIG COMPONENTS Core PATHS ${cgal_SOURCE_DIR} NO_DEFAULT_PATH)
 endfunction()
 

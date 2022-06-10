@@ -17,8 +17,20 @@ else()
   set(prefix ${FETCHCONTENT_BASE_DIR}/gmp)
   set(gmp_INSTALL ${prefix}/install)
   set(gmp_LIB_DIR ${gmp_INSTALL}/lib)
-  set(gmp_LIBRARY ${gmp_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}gmp${CMAKE_STATIC_LIBRARY_SUFFIX})
+  set(gmp_LIBRARY 
+    ${gmp_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}gmp${CMAKE_STATIC_LIBRARY_SUFFIX}
+    ${gmp_LIB_DIR}/${CMAKE_STATIC_LIBRARY_PREFIX}gmpxx${CMAKE_STATIC_LIBRARY_SUFFIX}
+    )
   set(gmp_INCLUDE_DIR ${gmp_INSTALL}/include)
+
+  # Try to use CONFIGURE_HANDLED_BY_BUILD ON to avoid constantly reconfiguring
+  if(${CMAKE_VERSION} VERSION_LESS 3.20)
+    # CMake < 3.20, do not use any extra option
+    set(gmp_ExternalProject_Add_extra_options)
+  else()
+    # CMake >= 3.20
+    set(gmp_ExternalProject_Add_extra_options "CONFIGURE_HANDLED_BY_BUILD;ON")
+  endif()
 
   ExternalProject_Add(gmp
     PREFIX ${prefix}
@@ -27,7 +39,7 @@ else()
     UPDATE_DISCONNECTED true  # need this to avoid constant rebuild
     PATCH_COMMAND 
       curl "https://gmplib.org/repo/gmp/raw-rev/5f32dbc41afc" "|" git apply -v
-    CONFIGURE_HANDLED_BY_BUILD ON  # avoid constant reconfigure
+    ${gmp_ExternalProject_Add_extra_options}
     CONFIGURE_COMMAND 
       ${prefix}/src/gmp/configure 
       --disable-debug --disable-dependency-tracking --enable-cxx --with-pic

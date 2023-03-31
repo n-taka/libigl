@@ -20,19 +20,14 @@ jobs:
   ####################
 
   Unix:
-    name: ${{ matrix.name }} (${{ matrix.config }}, ${{ fromJSON('["HeaderOnly", "Static"]')[matrix.static == 'ON'] }})
+    name: ${{ matrix.os }} ${{ fromJSON('["Header-Only", "Static"]')[matrix.build-params.static == 'ON'] }} ${{ matrix.build-params.tutorials == 'ON' && 'tutorial' || ''}} ${{ matrix.build-params.tests == 'ON' && 'tests' || ''}} ${{ matrix.config }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-20.04, macos-latest]
         config: [Release]
-        static: [ON, OFF]
-        include:
-          - os: macos-latest
-            name: macOS
-          - os: ubuntu-20.04
-            name: Linux
+        build-params: [ {static:  ON, tutorials:  ON, tests:  ON }, {static: OFF, tutorials: OFF, tests:  ON }, {static: OFF, tutorials:  ON, tests: OFF }]
     env:
       IGL_NUM_THREADS: 1  # See https://github.com/libigl/libigl/pull/996
     steps:
@@ -55,15 +50,14 @@ jobs:
       - name: Dependencies (macOS)
         if: runner.os == 'macOS'
         run: |
-          brew update
-          brew install ccache
+          HOMEBREW_NO_AUTO_UPDATE=1 brew install ccache
 
       - name: Cache Build
         id: cache-build
         uses: actions/cache@v2
         with:
           path: ~/.ccache
-          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.static }}-cache
+          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.build-params.static }}-cache
 
       - name: Prepare ccache
         run: |
@@ -77,7 +71,9 @@ jobs:
           cmake .. \
             -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} \
-            -DLIBIGL_USE_STATIC_LIBRARY=${{ matrix.static }} \
+            -DLIBIGL_USE_STATIC_LIBRARY=${{ matrix.build-params.static }} \
+            -DLIBIGL_BUILD_TUTORIALS=${{ matrix.build-params.tutorials }} \
+            -DLIBIGL_BUILD_TESTS=${{ matrix.build-params.tests }} \
             -DLIBIGL_COPYLEFT_CGAL=ON
 
       - name: Build
@@ -91,13 +87,13 @@ jobs:
   ####################
 
   Windows:
-    name: Windows (${{ matrix.config }}, ${{ fromJSON('["HeaderOnly", "Static"]')[matrix.static == 'ON'] }})
+    name: Windows ${{ fromJSON('["Header-Only", "Static"]')[matrix.build-params.static == 'ON'] }} ${{ matrix.build-params.tutorials == 'ON' && 'tutorial' || ''}} ${{ matrix.build-params.tests == 'ON' && 'tests' || ''}} ${{ matrix.config }}
     runs-on: windows-2022
     strategy:
       fail-fast: false
       matrix:
         config: [Release]
-        static: [ON, OFF]
+        build-params: [ {static:  ON, tutorials:  ON, tests:  ON }, {static: OFF, tutorials: OFF, tests:  ON }, {static: OFF, tutorials:  ON, tests: OFF }]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v1
@@ -116,7 +112,7 @@ jobs:
         uses: actions/cache@v2
         with:
           path: ${{ env.appdata }}\Mozilla\sccache
-          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.static }}-cache
+          key: ${{ runner.os }}-${{ matrix.config }}-${{ matrix.build-params.static }}-cache
 
       - name: Prepare sccache
         run: |
@@ -133,11 +129,13 @@ jobs:
           cmake -G Ninja ^
             -DCMAKE_CXX_COMPILER_LAUNCHER=sccache ^
             -DCMAKE_BUILD_TYPE=${{ matrix.config }} ^
-            -DLIBIGL_USE_STATIC_LIBRARY=${{ matrix.static }} ^
+            -DLIBIGL_USE_STATIC_LIBRARY=${{ matrix.build-params.static }} ^
             -DLIBIGL_COPYLEFT_CGAL=ON ^
+            -DLIBIGL_BUILD_TUTORIALS=${{ matrix.build-params.tutorials }} ^
+            -DLIBIGL_BUILD_TESTS=${{ matrix.build-params.tests }} ^
             -B build ^
             -S .
-          cmake --build build -j1
+          cmake --build build -j2
 
       - name: Tests
         run: cd build; ctest --verbose -j2

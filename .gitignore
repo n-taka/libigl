@@ -47,6 +47,8 @@ LibiglOptions.cmake
 
 # macos debris
 .DS_Store
+*~
 
-# visual studio code
-/.vs
+# visual studio
+.vs
+.vscode

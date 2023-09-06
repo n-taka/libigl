@@ -16,7 +16,6 @@ namespace tinyply
 {
 template<typename T, typename T2> T2 endian_swap(const T & /*v*/) noexcept {assert(false);} //{ return v; }
 
-template<typename T, typename T2> IGL_INLINE T2 endian_swap(const T & v) noexcept { return v; }
 template<> IGL_INLINE uint16_t endian_swap<uint16_t, uint16_t>(const uint16_t & v) noexcept { return (v << 8) | (v >> 8); }
 template<> IGL_INLINE uint32_t endian_swap<uint32_t, uint32_t>(const uint32_t & v) noexcept { return (v << 24) | ((v << 8) & 0x00ff0000) | ((v >> 8) & 0x0000ff00) | (v >> 24); }
 template<> IGL_INLINE uint64_t endian_swap<uint64_t, uint64_t>(const uint64_t & v) noexcept

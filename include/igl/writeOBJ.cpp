@@ -30,7 +30,7 @@ IGL_INLINE bool igl::writeOBJ(
   const Eigen::MatrixBase<DerivedTC>& TC,
   const Eigen::MatrixBase<DerivedFTC>& FTC)
 {
-  Eigen::matrix<typename DerivedV::Scalar, Eigen::Dynamic, Eigen::Dynamic> VC;
+  Eigen::Matrix<typename DerivedV::Scalar, Eigen::Dynamic, Eigen::Dynamic> VC;
   return writeOBJ(V, F, VC, CN, FN, TC, FTC);
 }
 

@@ -78,8 +78,8 @@ IGL_INLINE bool igl::writeWRL(
 
 
   //Check if RGB values are in the range [0..1] or [0..255]
-  double rgbScale = (C.maxCoeff() <= 1.0)?1.0:1.0/255.0;
-  Eigen::MatrixXd RGB = rgbScale * C;
+  typename DerivedC::Scalar rgbScale = (C.maxCoeff() <= 1.0)?1.0:1.0/255.0;
+  Matrix<typename DerivedC::Scalar, DerivedC::RowsAtCompileTime, DerivedC::ColsAtCompileTime> RGB = rgbScale * C;
 
   s<<R"(#VRML V2.0 utf8
 DEF default Transform {

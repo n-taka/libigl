@@ -1,8 +1,7 @@
 #include "eigs.h"
-#include <igl/sort.h>
-#include <igl/slice.h>
+#include "../sort.h"
+#include "../IGL_ASSERT.h"
 #include <Spectra/SymGEigsShiftSolver.h>
-#include <cassert>
 
 template <
   typename EigsScalar,
@@ -17,9 +16,9 @@ IGL_INLINE bool igl::spectra::eigs(
   Eigen::PlainObjectBase<DerivedU> & U,
   Eigen::PlainObjectBase<DerivedS> & S)
 {
-  assert(k > 0 && "k should be positive");
-  assert(k < A.rows() && "k should be less than size of A");
-  assert(type == igl::EIGS_TYPE_SM && "Only SM supported");
+  IGL_ASSERT(k > 0 && "k should be positive");
+  IGL_ASSERT(k < A.rows() && "k should be less than size of A");
+  IGL_ASSERT(type == igl::EIGS_TYPE_SM && "Only SM supported");
   // This seems like a hack. For the "eigs: grid" test this is necessary to get
   // at least 1e-4 error for the first 5 eigen values. It's annoying that this
   // means that the zero modes become O(sigma) and this is now rather large.
@@ -44,8 +43,8 @@ IGL_INLINE bool igl::spectra::eigs(
   Eigen::PlainObjectBase<DerivedS> & S)
 {
 
-  assert(k > 0 && "k should be positive");
-  assert(k < A.rows() && "k should be less than size of A");
+  IGL_ASSERT(k > 0 && "k should be positive");
+  IGL_ASSERT(k < A.rows() && "k should be less than size of A");
 
   class SparseMatProd
   {
@@ -82,9 +81,9 @@ IGL_INLINE bool igl::spectra::eigs(
         const Scalar sigma):
         m_A(A), m_B(B)
     {
-      assert(m_A.rows() == m_A.cols() && "A must be square");
-      assert(m_B.rows() == m_B.cols() && "B must be square");
-      assert(m_A.rows() == m_B.cols() && "A and B must have the same size");
+      IGL_ASSERT(m_A.rows() == m_A.cols() && "A must be square");
+      IGL_ASSERT(m_B.rows() == m_B.cols() && "B must be square");
+      IGL_ASSERT(m_A.rows() == m_B.cols() && "A and B must have the same size");
       set_shift(sigma, true);
     }
     void set_shift(const Scalar & sigma, const bool force = false)
@@ -118,7 +117,7 @@ IGL_INLINE bool igl::spectra::eigs(
   Spectra::SymGEigsShiftSolver<ShiftInvert, SparseMatProd, Spectra::GEigsMode::ShiftInvert> geigs(op, Bop, k, 2*k, sigma);
 
   geigs.init();
-  int nconv = geigs.compute(Spectra::SortRule::LargestMagn);
+  geigs.compute(Spectra::SortRule::LargestMagn);
   if (geigs.info() != Spectra::CompInfo::Successful)
   {
     return false;
@@ -128,7 +127,7 @@ IGL_INLINE bool igl::spectra::eigs(
 
   Eigen::VectorXi I;
   igl::sort( Eigen::VectorXd(S), 1, false, S, I);
-  igl::slice(Eigen::MatrixXd(U),I,2,U);
+  U = U(Eigen::all,I).eval();
   return true;
 }
 

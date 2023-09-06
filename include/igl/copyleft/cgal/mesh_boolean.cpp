@@ -22,7 +22,6 @@
 #include "../../parallel_for.h"
 #include "../../remove_unreferenced.h"
 #include "../../resolve_duplicated_faces.h"
-#include "../../slice.h"
 #include "../../unique_edge_map.h"
 #include "../../unique_simplices.h"
 #include "../../C_STR.h"
@@ -202,10 +201,8 @@ IGL_INLINE bool igl::copyleft::cgal::mesh_boolean(
   };
   tictoc();
 #endif
-  typedef typename DerivedVC::Scalar Scalar;
   typedef CGAL::Epeck Kernel;
   typedef Kernel::FT ExactScalar;
-  typedef Eigen::Matrix<Scalar,Eigen::Dynamic,3> MatrixX3S;
   typedef Eigen::Matrix<typename DerivedJ::Scalar,Eigen::Dynamic,1> VectorXJ;
   typedef Eigen::Matrix<
     ExactScalar,
@@ -250,7 +247,7 @@ IGL_INLINE bool igl::copyleft::cgal::mesh_boolean(
   // Compute cells (V,F,P,E,uE,EMAP) -> (per_patch_cells)
   Eigen::MatrixXi per_patch_cells;
   const size_t num_cells =
-  extract_cells( V, F, P, E, uE, EMAP, uEC, uEE, per_patch_cells);
+  extract_cells( V, F, P, uE, EMAP, uEC, uEE, per_patch_cells);
 #ifdef MESH_BOOLEAN_TIMING
   log_time("cell_extraction");
 #endif
@@ -372,7 +369,7 @@ IGL_INLINE bool igl::copyleft::cgal::mesh_boolean(
     DerivedFC G;
     DerivedJ JJ;
     igl::resolve_duplicated_faces(kept_faces, G, JJ);
-    igl::slice(kept_face_indices, JJ, 1, J);
+    J = kept_face_indices(JJ);
 
 #ifdef DOUBLE_CHECK_EXACT_OUTPUT
     {

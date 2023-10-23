@@ -24,17 +24,6 @@ namespace igl
     const Eigen::MatrixBase<DerivedV>& V,
     const Eigen::MatrixBase<DerivedF>& F,
     Eigen::PlainObjectBase<DerivedK> & K);
-  /// \overload
-  ///
-  /// @param[in] L_sq  #F by 3 list of squared edge lengths
-  /// @param[out] K  #F by poly-size eigen Matrix of internal angles
-  ///     for triangles, columns correspond to edges [1,2],[2,0],[0,1]
-  ///
-  /// \fileinfo
-  template <typename DerivedL, typename DerivedK>
-  IGL_INLINE void internal_angles_using_squared_edge_lengths(
-    const Eigen::MatrixBase<DerivedL>& L_sq,
-    Eigen::PlainObjectBase<DerivedK> & K);
 }
 
 #ifndef IGL_STATIC_LIBRARY

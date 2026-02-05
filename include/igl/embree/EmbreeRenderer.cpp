@@ -91,7 +91,6 @@ IGL_INLINE void igl::embree::EmbreeRenderer::init(
   if(initialized)
     deinit();
 
-  using namespace std;
 
   if(V.size() == 0 || F.size() == 0)
   {
@@ -136,10 +135,10 @@ IGL_INLINE void igl::embree::EmbreeRenderer::init(
   rtcCommitScene(scene);
 
   if(rtcGetDeviceError (device) != RTC_ERROR_NONE)
-      std::cerr << "Embree: An error occurred while initializing the provided geometry!" << endl;
+      std::cerr << "Embree: An error occurred while initializing the provided geometry!" << std::endl;
 #ifdef IGL_VERBOSE
   else
-    std::cerr << "Embree: geometry added." << endl;
+    std::cerr << "Embree: geometry added." << std::endl;
 #endif
 
   initialized = true;
@@ -175,7 +174,7 @@ IGL_INLINE void igl::embree::EmbreeRenderer::deinit()
 IGL_INLINE bool igl::embree::EmbreeRenderer::intersect_ray(
   const Eigen::RowVector3f& origin,
   const Eigen::RowVector3f& direction,
-  Hit&  hit,
+  Hit &  hit,
   float tnear,
   float tfar,
   int mask) const
@@ -186,9 +185,7 @@ IGL_INLINE bool igl::embree::EmbreeRenderer::intersect_ray(
 
   // shot ray
   {
-    RTCIntersectContext context;
-    rtcInitIntersectContext(&context);
-    rtcIntersect1(scene, &context, &ray);
+    rtcIntersect1(scene,&ray);
     ray.hit.Ng_x = -ray.hit.Ng_x; // EMBREE_FIXME: only correct for triangles,quads, and subdivision surfaces
     ray.hit.Ng_y = -ray.hit.Ng_y;
     ray.hit.Ng_z = -ray.hit.Ng_z;

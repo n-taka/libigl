@@ -10,15 +10,14 @@
 
 template < typename DerivedX, typename DerivedY>
 IGL_INLINE void igl::ceil(
-  const Eigen::PlainObjectBase<DerivedX>& X,
+  const Eigen::MatrixBase<DerivedX>& X,
   Eigen::PlainObjectBase<DerivedY>& Y)
 {
-  using namespace std;
   typedef typename DerivedX::Scalar Scalar;
   Y = X.unaryExpr([](const Scalar &x)->Scalar{return std::ceil(x);}).template cast<typename DerivedY::Scalar >();
 }
 
 #ifdef IGL_STATIC_LIBRARY
 // Explicit template instantiation
-template void igl::ceil<Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<double, -1, -1, 0, -1, -1> >(Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> >&);
+template void igl::ceil<Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<double, -1, -1, 0, -1, -1> >(Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> >&);
 #endif

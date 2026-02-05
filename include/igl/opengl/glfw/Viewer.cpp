@@ -106,7 +106,6 @@ static void glfw_mouse_move(GLFWwindow* /*window*/ , double x, double y)
 
 static void glfw_mouse_scroll(GLFWwindow* /*window*/ , double x, double y)
 {
-  using namespace std;
   scroll_x += x;
   scroll_y += y;
 
@@ -212,8 +211,8 @@ namespace glfw
     glfwGetFramebufferSize(window, &width, &height);
     int width_window, height_window;
     glfwGetWindowSize(window, &width_window, &height_window);
-    highdpiw = windowWidth/width_window;
-    highdpih = windowHeight/height_window;
+    highdpiw = (windowWidth <= 0 || width_window <= 0) ? 1 : ((double)windowWidth/width_window);
+    highdpih = (windowHeight <= 0 || height_window <= 0) ? 1 : ((double)windowHeight/height_window);
     glfw_window_size(window,width_window,height_window);
     // Initialize IGL viewer
     init();
@@ -556,6 +555,12 @@ namespace glfw
       case 'l':
       {
         core().toggle(data().show_lines);
+        return true;
+      }
+      case 'N':
+      case 'n':
+      {
+        data().pseudocolor_with_normals = !data().pseudocolor_with_normals;
         return true;
       }
       case 'O':
@@ -919,9 +924,6 @@ namespace glfw
 
   IGL_INLINE void Viewer::draw()
   {
-    using namespace std;
-    using namespace Eigen;
-
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
 

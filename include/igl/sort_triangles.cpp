@@ -11,6 +11,7 @@
 #include "sortrows.h"
 #include "slice.h"
 #include "round.h"
+#include "placeholders.h"
 #include "colon.h"
 
 #include <iostream>
@@ -30,10 +31,6 @@ IGL_INLINE void igl::sort_triangles(
   Eigen::PlainObjectBase<DerivedFF> & FF,
   Eigen::PlainObjectBase<DerivedI> & I)
 {
-  using namespace Eigen;
-  using namespace std;
-
-
   typedef typename DerivedV::Scalar Scalar;
   // Barycenter, centroid
   Eigen::Matrix<Scalar, DerivedF::RowsAtCompileTime,1> D,sD;
@@ -46,7 +43,7 @@ IGL_INLINE void igl::sort_triangles(
       MV.template cast<Scalar>().transpose()*
        P.template cast<Scalar>().transpose().eval().col(2));
   sort(D,1,false,sD,I);
-  FF = F(I.derived(),Eigen::all);
+  FF = F(I.derived(),igl::placeholders::all);
 }
 
 

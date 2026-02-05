@@ -25,11 +25,15 @@ IGL_INLINE void igl::embree::ambient_occlusion(
     const Eigen::Vector3f& s,
     const Eigen::Vector3f& dir)->bool
   {
-    igl::Hit hit;
+    igl::Hit<float> hit;
     const float tnear = 1e-4f;
     return ei.intersectRay(s,dir,hit,tnear);
   };
-  return igl::ambient_occlusion(shoot_ray,P,N,num_samples,S);
+  const auto Pf = P.template cast<float>().eval();
+  const auto Nf = N.template cast<float>().eval();
+  Eigen::Matrix<float,Eigen::Dynamic,1> Sf;
+  igl::ambient_occlusion(shoot_ray,Pf,Nf,num_samples,Sf);
+  S = Sf.template cast<typename DerivedS::Scalar>();
 }
 
 template <
@@ -46,7 +50,6 @@ IGL_INLINE void igl::embree::ambient_occlusion(
   const int num_samples,
   Eigen::PlainObjectBase<DerivedS> & S)
 {
-  using namespace Eigen;
   EmbreeIntersector ei;
   ei.init(V.template cast<float>(),F.template cast<int>());
   ambient_occlusion(ei,P,N,num_samples,S);

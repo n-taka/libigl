@@ -6,18 +6,20 @@
 // v. 2.0. If a copy of the MPL was not distributed with this file, You can 
 // obtain one at http://mozilla.org/MPL/2.0/.
 #include "decimate.h"
-#include "collapse_edge.h"
+#include "collapse_least_cost_edge.h"
 #include "edge_flaps.h"
 #include "decimate_trivial_callbacks.h"
 #include "AABB.h"
 #include "intersection_blocking_collapse_edge_callbacks.h"
 #include "is_edge_manifold.h"
 #include "remove_unreferenced.h"
+#include "placeholders.h"
 #include "find.h"
 #include "connect_boundary_to_infinity.h"
 #include "parallel_for.h"
 #include "max_faces_stopping_condition.h"
 #include "shortest_edge_and_midpoint.h"
+#include "PlainMatrix.h"
 
 IGL_INLINE bool igl::decimate(
   const Eigen::MatrixXd & V,
@@ -41,9 +43,10 @@ IGL_INLINE bool igl::decimate(
   int m = F.rows();
   typedef Eigen::MatrixXd DerivedV;
   typedef Eigen::MatrixXi DerivedF;
-  DerivedV VO;
-  DerivedF FO;
+  PlainMatrix<DerivedV> VO;
+  PlainMatrix<DerivedF> FO;
   igl::connect_boundary_to_infinity(V,F,VO,FO);
+  // These will unfortunately be immediately recomputed in decimate.
   Eigen::VectorXi EMAP;
   Eigen::MatrixXi E,EF,EI;
   edge_flaps(FO,E,EMAP,EF,EI);
@@ -75,16 +78,12 @@ IGL_INLINE bool igl::decimate(
     max_faces_stopping_condition(m,orig_m,max_m),
     pre_collapse,
     post_collapse,
-    E,
-    EMAP,
-    EF,
-    EI,
     U,
     G,
     J,
     I);
   const Eigen::Array<bool,Eigen::Dynamic,1> keep = (J.array()<orig_m);
-  G = G(igl::find(keep),Eigen::all).eval();
+  G = G(igl::find(keep),igl::placeholders::all).eval();
   J = J(igl::find(keep)).eval();
   Eigen::VectorXi _1,I2;
   igl::remove_unreferenced(Eigen::MatrixXd(U),Eigen::MatrixXi(G),U,G,_1,I2);
@@ -99,53 +98,8 @@ IGL_INLINE bool igl::decimate(
   const Eigen::MatrixXi & OF,
   const decimate_cost_and_placement_callback & cost_and_placement,
   const decimate_stopping_condition_callback & stopping_condition,
-  Eigen::MatrixXd & U,
-  Eigen::MatrixXi & G,
-  Eigen::VectorXi & J,
-  Eigen::VectorXi & I
-  )
-{
-  decimate_pre_collapse_callback always_try;
-  decimate_post_collapse_callback never_care;
-  decimate_trivial_callbacks(always_try,never_care);
-  return igl::decimate(
-    OV,OF,cost_and_placement,stopping_condition,always_try,never_care,U,G,J,I);
-}
-
-IGL_INLINE bool igl::decimate(
-  const Eigen::MatrixXd & OV,
-  const Eigen::MatrixXi & OF,
-  const decimate_cost_and_placement_callback & cost_and_placement,
-  const decimate_stopping_condition_callback & stopping_condition,
   const decimate_pre_collapse_callback       & pre_collapse,
   const decimate_post_collapse_callback      & post_collapse,
-  Eigen::MatrixXd & U,
-  Eigen::MatrixXi & G,
-  Eigen::VectorXi & J,
-  Eigen::VectorXi & I
-  )
-{
-  Eigen::VectorXi EMAP;
-  Eigen::MatrixXi E,EF,EI;
-  edge_flaps(OF,E,EMAP,EF,EI);
-  return igl::decimate(
-    OV,OF,
-    cost_and_placement,stopping_condition,pre_collapse,post_collapse,
-    E,EMAP,EF,EI,
-    U,G,J,I);
-}
-
-IGL_INLINE bool igl::decimate(
-  const Eigen::MatrixXd & OV,
-  const Eigen::MatrixXi & OF,
-  const decimate_cost_and_placement_callback & cost_and_placement,
-  const decimate_stopping_condition_callback & stopping_condition,
-  const decimate_pre_collapse_callback       & pre_collapse,
-  const decimate_post_collapse_callback      & post_collapse,
-  const Eigen::MatrixXi & /*OE*/,
-  const Eigen::VectorXi & /*OEMAP*/,
-  const Eigen::MatrixXi & /*OEF*/,
-  const Eigen::MatrixXi & /*OEI*/,
   Eigen::MatrixXd & U,
   Eigen::MatrixXi & G,
   Eigen::VectorXi & J,
@@ -153,14 +107,12 @@ IGL_INLINE bool igl::decimate(
   )
 {
   // Decimate 1
-  using namespace Eigen;
-  using namespace std;
   // Working copies
   Eigen::MatrixXd V = OV;
   Eigen::MatrixXi F = OF;
   // Why recompute this rather than copy input?
-  VectorXi EMAP;
-  MatrixXi E,EF,EI;
+  Eigen::VectorXi EMAP;
+  Eigen::MatrixXi E,EF,EI;
   edge_flaps(F,E,EMAP,EF,EI);
   {
     Eigen::Array<bool,Eigen::Dynamic,Eigen::Dynamic> BF;
@@ -175,7 +127,7 @@ IGL_INLINE bool igl::decimate(
   // Could reserve with https://stackoverflow.com/a/29236236/148668
   Eigen::VectorXi EQ = Eigen::VectorXi::Zero(E.rows());
   // If an edge were collapsed, we'd collapse it to these points:
-  MatrixXd C(E.rows(),V.cols());
+  Eigen::MatrixXd C(E.rows(),V.cols());
   // Pushing into a vector then using constructor was slower. Maybe using
   // std::move + make_heap would squeeze out something?
   
@@ -187,7 +139,13 @@ IGL_INLINE bool igl::decimate(
     igl::parallel_for(E.rows(),[&](const int e)
     {
       double cost = e;
-      RowVectorXd p(1,3);
+      // RowVectorXd here means that cost_and_placement needs to expect that
+      // output parameter type, which makes it hard to use a generic template
+      // for cost_and_placement.
+      // If we were using more modern C++ then cost_and_placement could return a
+      // tuple and could be unpacked into auto [cost,p] =
+      // cost_and_placement(...) without much issue.
+      Eigen::RowVectorXd p(1,3);
       cost_and_placement(e,V,F,E,EMAP,EF,EI,cost,p);
       C.row(e) = p;
       costs(e) = cost;
@@ -207,7 +165,7 @@ IGL_INLINE bool igl::decimate(
   while(true)
   {
     int e,e1,e2,f1,f2;
-    if(collapse_edge(
+    if(collapse_least_cost_edge(
       cost_and_placement, pre_collapse, post_collapse,
       V,F,E,EMAP,EF,EI,Q,EQ,C,e,e1,e2,f1,f2))
     {
@@ -234,7 +192,7 @@ IGL_INLINE bool igl::decimate(
     prev_e = e;
   }
   // remove all IGL_COLLAPSE_EDGE_NULL faces
-  MatrixXi F2(F.rows(),3);
+  Eigen::MatrixXi F2(F.rows(),3);
   J.resize(F.rows());
   int m = 0;
   for(int f = 0;f<F.rows();f++)
@@ -251,7 +209,8 @@ IGL_INLINE bool igl::decimate(
   }
   F2.conservativeResize(m,F2.cols());
   J.conservativeResize(m);
-  VectorXi _1;
+  Eigen::VectorXi _1;
   igl::remove_unreferenced(V,F2,U,G,_1,I);
   return clean_finish;
 }
+

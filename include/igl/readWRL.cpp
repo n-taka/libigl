@@ -53,14 +53,12 @@ IGL_INLINE bool igl::readWRL(
   std::vector<std::vector<Index > > & F,
   std::vector<std::vector<Scalar > >& VC)
 {
-  using namespace std;
-
   char line[1000];
   // Read lines until seeing "point ["
   // treat other lines in file as "comments"
   bool still_comments = true;
-  string needle("point [");
-  string haystack;
+  std::string needle("point [");
+  std::string haystack;
   while(still_comments)
   {
     long thisLine = ftell(wrl_file);
@@ -92,7 +90,7 @@ IGL_INLINE bool igl::readWRL(
     floats_read = fscanf(wrl_file," %lf %lf %lf,",&x,&y,&z);
     if(floats_read == 3)
     {
-      vector<Scalar > point;
+      std::vector<Scalar > point;
       point.resize(3);
       point[0] = x;
       point[1] = y;
@@ -190,7 +188,7 @@ IGL_INLINE bool igl::readWRL(
   // Read lines until seeing "coordIndex ["
   // treat other lines in file as "comments"
   still_comments = true;
-  needle = string("coordIndex [");
+  needle = std::string("coordIndex [");
   while(still_comments)
   {
     long thisLine = ftell(wrl_file);
@@ -218,7 +216,7 @@ IGL_INLINE bool igl::readWRL(
   while(ints_read > 0)
   {
     // read new face indices (until hit -1)
-    vector<Index > face;
+    std::vector<Index > face;
     while(true)
     {
       // indices are 0-indexed

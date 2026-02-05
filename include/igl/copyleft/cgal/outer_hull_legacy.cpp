@@ -27,6 +27,7 @@
 #include "../../unique_edge_map.h"
 #include "../../barycenter.h"
 #include "../../per_face_normals.h"
+#include "../../PlainMatrix.h"
 #include "../../sort_angles.h"
 #include <Eigen/Geometry>
 #include <vector>
@@ -44,8 +45,8 @@ template <
   typename DerivedJ,
   typename Derivedflip>
 IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
-  const Eigen::PlainObjectBase<DerivedV> & V,
-  const Eigen::PlainObjectBase<DerivedF> & F,
+  const Eigen::MatrixBase<DerivedV> & V,
+  const Eigen::MatrixBase<DerivedF> & F,
   Eigen::PlainObjectBase<DerivedG> & G,
   Eigen::PlainObjectBase<DerivedJ> & J,
   Eigen::PlainObjectBase<Derivedflip> & flip)
@@ -53,14 +54,12 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
 #ifdef IGL_OUTER_HULL_DEBUG
   std::cerr << "Extracting outer hull" << std::endl;
 #endif
-  using namespace Eigen;
-  using namespace std;
   typedef typename DerivedF::Index Index;
-  Matrix<Index,DerivedF::RowsAtCompileTime,1> C;
-  typedef Matrix<typename DerivedV::Scalar,Dynamic,DerivedV::ColsAtCompileTime> MatrixXV;
-  //typedef Matrix<typename DerivedF::Scalar,Dynamic,DerivedF::ColsAtCompileTime> MatrixXF;
-  typedef Matrix<typename DerivedG::Scalar,Dynamic,DerivedG::ColsAtCompileTime> MatrixXG;
-  typedef Matrix<typename DerivedJ::Scalar,Dynamic,DerivedJ::ColsAtCompileTime> MatrixXJ;
+  Eigen::Matrix<Index,DerivedF::RowsAtCompileTime,1> C;
+  typedef Eigen::Matrix<typename DerivedV::Scalar ,Eigen::Dynamic,DerivedV::ColsAtCompileTime> MatrixXV;
+  //typedef Eigen::Matrix<typename DerivedF::Scalar ,Eigen::Dynamic,DerivedF::ColsAtCompileTime> MatrixXF;
+  typedef Eigen::Matrix<typename DerivedG::Scalar ,Eigen::Dynamic,DerivedG::ColsAtCompileTime> MatrixXG;
+  typedef Eigen::Matrix<typename DerivedJ::Scalar ,Eigen::Dynamic,DerivedJ::ColsAtCompileTime> MatrixXJ;
   const Index m = F.rows();
 
   // UNUSED:
@@ -76,18 +75,18 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
   //};
 
 #ifdef IGL_OUTER_HULL_DEBUG
-  cout<<"outer hull..."<<endl;
+  std::cout<<"outer hull..."<<std::endl;
 #endif
 
 #ifdef IGL_OUTER_HULL_DEBUG
-  cout<<"edge map..."<<endl;
+  std::cout<<"edge map..."<<std::endl;
 #endif
-  typedef Matrix<typename DerivedF::Scalar,Dynamic,2> MatrixX2I;
-  typedef Matrix<typename DerivedF::Index,Dynamic,1> VectorXI;
-  //typedef Matrix<typename DerivedV::Scalar, 3, 1> Vector3F;
+  typedef Eigen::Matrix<typename DerivedF::Scalar ,Eigen::Dynamic,2> MatrixX2I;
+  typedef Eigen::Matrix<typename DerivedF::Index ,Eigen::Dynamic,1> VectorXI;
+  //typedef Eigen::Matrix<typename DerivedV::Scalar, 3, 1> Vector3F;
   MatrixX2I E,uE;
   VectorXI EMAP;
-  vector<vector<typename DerivedF::Index> > uE2E;
+  std::vector<std::vector<typename DerivedF::Index> > uE2E;
   unique_edge_map(F,E,uE,EMAP,uE2E);
 #ifdef IGL_OUTER_HULL_DEBUG
   for (size_t ui=0; ui<uE.rows(); ui++) {
@@ -111,11 +110,11 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
       }
   }
 
-  vector<vector<vector<Index > > > TT,_1;
+  std::vector<std::vector<std::vector<Index > > > TT,_1;
   triangle_triangle_adjacency(E,EMAP,uE2E,false,TT,_1);
   VectorXI counts;
 #ifdef IGL_OUTER_HULL_DEBUG
-  cout<<"facet components..."<<endl;
+  std::cout<<"facet components..."<<std::endl;
 #endif
   facet_components(TT,C,counts);
   assert(C.maxCoeff()+1 == counts.rows());
@@ -125,21 +124,21 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
   flip.setConstant(m,1,false);
 
 #ifdef IGL_OUTER_HULL_DEBUG
-  cout<<"reindex..."<<endl;
+  std::cout<<"reindex..."<<std::endl;
 #endif
   // H contains list of faces on outer hull;
-  vector<bool> FH(m,false);
-  vector<bool> EH(3*m,false);
-  vector<MatrixXG> vG(ncc);
-  vector<MatrixXJ> vJ(ncc);
-  vector<MatrixXJ> vIM(ncc);
+  std::vector<bool> FH(m,false);
+  std::vector<bool> EH(3*m,false);
+  std::vector<MatrixXG> vG(ncc);
+  std::vector<MatrixXJ> vJ(ncc);
+  std::vector<MatrixXJ> vIM(ncc);
   //size_t face_count = 0;
   for(size_t id = 0;id<ncc;id++)
   {
     vIM[id].resize(counts[id],1);
   }
   // current index into each IM
-  vector<size_t> g(ncc,0);
+  std::vector<size_t> g(ncc,0);
   // place order of each face in its respective component
   for(Index f = 0;f<m;f++)
   {
@@ -147,7 +146,7 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
   }
 
 #ifdef IGL_OUTER_HULL_DEBUG
-  cout<<"barycenters..."<<endl;
+  std::cout<<"barycenters..."<<std::endl;
 #endif
   // assumes that "resolve" has handled any coplanar cases correctly and nearly
   // coplanar cases can be sorted based on barycenter.
@@ -155,7 +154,7 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
   barycenter(V,F,BC);
 
 #ifdef IGL_OUTER_HULL_DEBUG
-  cout<<"loop over CCs (="<<ncc<<")..."<<endl;
+  std::cout<<"loop over CCs (="<<ncc<<")..."<<std::endl;
 #endif
   for(Index id = 0;id<(Index)ncc;id++)
   {
@@ -165,11 +164,11 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
     int f;
     bool f_flip;
 #ifdef IGL_OUTER_HULL_DEBUG
-  cout<<"outer facet..."<<endl;
+  std::cout<<"outer facet..."<<std::endl;
 #endif
   igl::copyleft::cgal::outer_facet(V,F,IM,f,f_flip);
 #ifdef IGL_OUTER_HULL_DEBUG
-  cout<<"outer facet: "<<f<<endl;
+  std::cout<<"outer facet: "<<f<<std::endl;
   //cout << V.row(F(f, 0)) << std::endl;
   //cout << V.row(F(f, 1)) << std::endl;
   //cout << V.row(F(f, 2)) << std::endl;
@@ -177,16 +176,16 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
     int FHcount = 1;
     FH[f] = true;
     // Q contains list of face edges to continue traversing upong
-    queue<int> Q;
+    std::queue<int> Q;
     Q.push(f+0*m);
     Q.push(f+1*m);
     Q.push(f+2*m);
     flip(f) = f_flip;
     //std::cout << "face " << face_count++ << ": " << f << std::endl;
     //std::cout << "f " << F.row(f).array()+1 << std::endl;
-    //cout<<"flip("<<f<<") = "<<(flip(f)?"true":"false")<<endl;
+    //cout<<"flip("<<f<<") = "<<(flip(f)?"true":"false")<<std::endl;
 #ifdef IGL_OUTER_HULL_DEBUG
-  cout<<"BFS..."<<endl;
+  std::cout<<"BFS..."<<std::endl;
 #endif
     while(!Q.empty())
     {
@@ -244,7 +243,7 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
         //cout<<"Next facet: "<<(f+1)<<" --> "<<(nf+1)<<", |"<<
         //  di[EMAP(e)][diIM(e)]<<" - "<<di[EMAP(e)][nfei_new]<<"| = "<<
         //    abs(di[EMAP(e)][diIM(e)] - di[EMAP(e)][nfei_new])
-        //    <<endl;
+        //    <<std::endl;
 #endif
 
 
@@ -265,7 +264,7 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
         //        << std::endl;
         }
 //#ifdef IGL_OUTER_HULL_DEBUG
-//        cout<<"Skipping co-planar facet: "<<(f+1)<<" --> "<<(nf+1)<<endl;
+//        std::cout<<"Skipping co-planar facet: "<<(f+1)<<" --> "<<(nf+1)<<std::endl;
 //#endif
       }
 
@@ -283,7 +282,7 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
         if(!FH[nf])
         {
           // first time seeing face
-          cout<<(f+1)<<" --> "<<(nf+1)<<endl;
+          std::cout<<(f+1)<<" --> "<<(nf+1)<<std::endl;
         }
 #endif
         FH[nf] = true;
@@ -295,7 +294,7 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
         const int nd = F(nf,(nc+2)%3);
         const bool cons = (flip(f)?fd:fs) == nd;
         flip(nf) = (cons ? flip(f) : !flip(f));
-        //cout<<"flip("<<nf<<") = "<<(flip(nf)?"true":"false")<<endl;
+        //cout<<"flip("<<nf<<") = "<<(flip(nf)?"true":"false")<<std::endl;
         const int ne1 = nf+((nc+1)%3)*m;
         const int ne2 = nf+((nc+2)%3)*m;
         if(!EH[ne1])
@@ -336,16 +335,16 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
   // Is A inside B? Assuming A and B are consistently oriented but closed and
   // non-intersecting.
   const auto & has_overlapping_bbox = [](
-    const Eigen::PlainObjectBase<DerivedV> & V,
+    const Eigen::MatrixBase<DerivedV> & V,
     const MatrixXG & A,
     const MatrixXG & B)->bool
   {
     const auto & bounding_box = [](
-      const Eigen::PlainObjectBase<DerivedV> & V,
+      const Eigen::MatrixBase<DerivedV> & V,
       const MatrixXG & F)->
-        DerivedV
+        PlainMatrix<DerivedV,2,3>
     {
-      DerivedV BB(2,3);
+      PlainMatrix<DerivedV,2,3> BB(2,3);
       BB<<
          1e26,1e26,1e26,
         -1e26,-1e26,-1e26;
@@ -367,8 +366,8 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
     };
     // A lot of the time we're dealing with unrelated, distant components: cull
     // them.
-    DerivedV ABB = bounding_box(V,A);
-    DerivedV BBB = bounding_box(V,B);
+    PlainMatrix<DerivedV,2,3> ABB = bounding_box(V,A);
+    PlainMatrix<DerivedV,2,3> BBB = bounding_box(V,B);
     if( (BBB.row(0)-ABB.row(1)).maxCoeff()>0  ||
         (ABB.row(0)-BBB.row(1)).maxCoeff()>0 )
     {
@@ -380,7 +379,7 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
   };
 
   // Reject components which are completely inside other components
-  vector<bool> keep(ncc,true);
+  std::vector<bool> keep(ncc,true);
   size_t nG = 0;
   // This is O( ncc * ncc * m)
   for(size_t id = 0;id<ncc;id++)
@@ -398,10 +397,10 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
       }
     }
     const size_t num_unresolved_components = unresolved.size();
-    DerivedV query_points(num_unresolved_components, 3);
+    PlainMatrix<DerivedV,Eigen::Dynamic,3> query_points(num_unresolved_components, 3);
     for (size_t i=0; i<num_unresolved_components; i++) {
         const size_t oid = unresolved[i];
-        DerivedF f = vG[oid].row(0);
+        PlainMatrix<DerivedF,1> f = vG[oid].row(0);
         query_points(i,0) = (V(f(0,0), 0) + V(f(0,1), 0) + V(f(0,2), 0))/3.0;
         query_points(i,1) = (V(f(0,0), 1) + V(f(0,1), 1) + V(f(0,2), 1))/3.0;
         query_points(i,2) = (V(f(0,0), 2) + V(f(0,1), 2) + V(f(0,2), 2))/3.0;
@@ -444,9 +443,9 @@ IGL_INLINE void igl::copyleft::cgal::outer_hull_legacy(
 #ifdef IGL_STATIC_LIBRARY
 // Explicit template instantiation
 // generated by autoexplicit.sh
-template void igl::copyleft::cgal::outer_hull_legacy<Eigen::Matrix<CGAL::Epeck::FT, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, 1, 0, -1, 1>, Eigen::Matrix<int, -1, 1, 0, -1, 1> >(Eigen::PlainObjectBase<Eigen::Matrix<CGAL::Epeck::FT, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> >&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1> >&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1> >&);
-template void igl::copyleft::cgal::outer_hull_legacy< Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, 1, 0, -1, 1>, Eigen::Matrix<int, -1, 1, 0, -1, 1> >(Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > &, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1> > &, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1> > &);
-template void igl::copyleft::cgal::outer_hull_legacy<Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1> >(Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> >&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> >&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> >&);
+template void igl::copyleft::cgal::outer_hull_legacy<Eigen::Matrix<CGAL::Epeck::FT, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, 1, 0, -1, 1>, Eigen::Matrix<int, -1, 1, 0, -1, 1> >(Eigen::MatrixBase<Eigen::Matrix<CGAL::Epeck::FT, -1, -1, 0, -1, -1> > const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> >&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1> >&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1> >&);
+template void igl::copyleft::cgal::outer_hull_legacy< Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, 1, 0, -1, 1>, Eigen::Matrix<int, -1, 1, 0, -1, 1> >(Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > &, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1> > &, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1> > &);
+template void igl::copyleft::cgal::outer_hull_legacy<Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1> >(Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1> > const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> > const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> >&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> >&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, -1, 0, -1, -1> >&);
 #ifdef WIN32
 #endif
 #endif

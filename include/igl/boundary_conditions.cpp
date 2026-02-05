@@ -15,34 +15,41 @@
 #include <map>
 #include <iostream>
 
+template <
+  typename DerivedV,
+  typename DerivedEle,
+  typename DerivedC,
+  typename DerivedP,
+  typename DerivedBE,
+  typename DerivedCE,
+  typename DerivedCF,
+  typename Derivedb,
+  typename Derivedbc>
 IGL_INLINE bool igl::boundary_conditions(
-  const Eigen::MatrixXd & V  ,
-  const Eigen::MatrixXi & /*Ele*/,
-  const Eigen::MatrixXd & C  ,
-  const Eigen::VectorXi & P  ,
-  const Eigen::MatrixXi & BE ,
-  const Eigen::MatrixXi & CE ,
-  const Eigen::MatrixXi & CF ,
-  Eigen::VectorXi &       b  ,
-  Eigen::MatrixXd &       bc )
+  const Eigen::MatrixBase<DerivedV> & V,
+  const Eigen::MatrixBase<DerivedEle> & Ele,
+  const Eigen::MatrixBase<DerivedC> & C,
+  const Eigen::MatrixBase<DerivedP> & P,
+  const Eigen::MatrixBase<DerivedBE> & BE,
+  const Eigen::MatrixBase<DerivedCE> & CE,
+  const Eigen::MatrixBase<DerivedCF> & CF,
+  Eigen::PlainObjectBase<Derivedb> & b,
+  Eigen::PlainObjectBase<Derivedbc> & bc)
 {
-  using namespace Eigen;
-  using namespace std;
-
   if(P.size()+BE.rows() == 0)
   {
     verbose("^%s: Error: no handles found\n",__FUNCTION__);
     return false;
   }
 
-  vector<int> bci;
-  vector<int> bcj;
-  vector<double> bcv;
+  std::vector<int> bci;
+  std::vector<int> bcj;
+  std::vector<double> bcv;
 
   // loop over points
   for(int p = 0;p<P.size();p++)
   {
-    VectorXd pos = C.row(P(p));
+    Eigen::VectorXd pos = C.row(P(p));
     // loop over domain vertices
     for(int i = 0;i<V.rows();i++)
     {
@@ -51,7 +58,7 @@ IGL_INLINE bool igl::boundary_conditions(
       // EIGEN GOTCHA:
       // double sqrd = (V.row(i)-pos).array().pow(2).sum();
       // Must first store in temporary
-      VectorXd vi = V.row(i);
+      Eigen::VectorXd vi = V.row(i);
       double sqrd = (vi-pos).squaredNorm();
       if(sqrd <= FLOAT_EPS)
       {
@@ -76,8 +83,8 @@ IGL_INLINE bool igl::boundary_conditions(
     for(int i = 0;i<V.rows();i++)
     {
       // Find samples from tip up to tail
-      VectorXd tip = C.row(BE(e,0));
-      VectorXd tail = C.row(BE(e,1));
+      Eigen::VectorXd tip = C.row(BE(e,0));
+      Eigen::VectorXd tail = C.row(BE(e,1));
       // Compute parameter along bone and squared distance
       double t,sqrd;
       project_to_line(
@@ -101,8 +108,8 @@ IGL_INLINE bool igl::boundary_conditions(
     for(int i = 0;i<V.rows();i++)
     {
       // Find samples from tip up to tail
-      VectorXd tip = C.row(P(CE(e,0)));
-      VectorXd tail = C.row(P(CE(e,1)));
+      Eigen::VectorXd tip = C.row(P(CE(e,0)));
+      Eigen::VectorXd tail = C.row(P(CE(e,1)));
       // Compute parameter along bone and squared distance
       double t,sqrd;
       project_to_line(
@@ -126,10 +133,10 @@ IGL_INLINE bool igl::boundary_conditions(
   // loop over cage faces
   for(int f = 0;f<CF.rows();f++)
   {
-    Vector3d v_0 = C.row(P(CF(f, 0)));
-    Vector3d v_1 = C.row(P(CF(f, 1)));
-    Vector3d v_2 = C.row(P(CF(f, 2)));
-    Vector3d n = (v_1 - v_0).cross(v_2 - v_1);
+    Eigen::Vector3d v_0 = C.row(P(CF(f, 0)));
+    Eigen::Vector3d v_1 = C.row(P(CF(f, 1)));
+    Eigen::Vector3d v_2 = C.row(P(CF(f, 2)));
+    Eigen::Vector3d n = (v_1 - v_0).cross(v_2 - v_1);
     n.normalize();
     // loop over domain vertices
     for (int i = 0;i<V.rows();i++)
@@ -139,13 +146,13 @@ IGL_INLINE bool igl::boundary_conditions(
       {
           continue;
       }
-      Vector3d point = V.row(i);
-      Vector3d v = point - v_0;
+      Eigen::Vector3d point = V.row(i);
+      Eigen::Vector3d v = point - v_0;
       double dist = abs(v.dot(n));
       if (dist <= 1.e-1f)
       {
         //barycentric coordinates
-        Vector3d vec_0 = v_1 - v_0, vec_1 = v_2 - v_0, vec_2 = point - v_0;
+        Eigen::Vector3d vec_0 = v_1 - v_0, vec_1 = v_2 - v_0, vec_2 = point - v_0;
         double d00 = vec_0.dot(vec_0);
         double d01 = vec_0.dot(vec_1);
         double d11 = vec_1.dot(vec_1);
@@ -174,17 +181,17 @@ IGL_INLINE bool igl::boundary_conditions(
   }
 
   // find unique boundary indices
-  vector<int> vb = bci;
-  sort(vb.begin(),vb.end());
+  std::vector<int> vb = bci;
+  std::sort(vb.begin(),vb.end());
   vb.erase(unique(vb.begin(), vb.end()), vb.end());
 
   b.resize(vb.size());
-  bc = MatrixXd::Zero(vb.size(),P.size()+BE.rows());
+  bc = Eigen::MatrixXd::Zero(vb.size(),P.size()+BE.rows());
   // Map from boundary index to index in boundary
-  map<int,int> bim;
+  std::map<int,int> bim;
   int i = 0;
   // Also fill in b
-  for(vector<int>::iterator bit = vb.begin();bit != vb.end();bit++)
+  for(std::vector<int>::iterator bit = vb.begin();bit != vb.end();bit++)
   {
     b(i) = *bit;
     bim[*bit] = i;
@@ -242,3 +249,8 @@ IGL_INLINE bool igl::boundary_conditions(
 
   return true;
 }
+
+#ifdef IGL_STATIC_LIBRARY
+// Explicit template instantiation
+template bool igl::boundary_conditions<Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<double, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, 1, 0, -1, 1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, -1, 0, -1, -1>, Eigen::Matrix<int, -1, 1, 0, -1, 1>, Eigen::Matrix<double, -1, -1, 0, -1, -1>>(Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1>> const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, -1, 0, -1, -1>> const&, Eigen::MatrixBase<Eigen::Matrix<double, -1, -1, 0, -1, -1>> const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, 1, 0, -1, 1>> const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, -1, 0, -1, -1>> const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, -1, 0, -1, -1>> const&, Eigen::MatrixBase<Eigen::Matrix<int, -1, -1, 0, -1, -1>> const&, Eigen::PlainObjectBase<Eigen::Matrix<int, -1, 1, 0, -1, 1>>&, Eigen::PlainObjectBase<Eigen::Matrix<double, -1, -1, 0, -1, -1>>&);
+#endif

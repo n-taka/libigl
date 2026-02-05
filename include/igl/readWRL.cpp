@@ -35,7 +35,6 @@ IGL_INLINE bool igl::readWRL(
   std::vector<std::vector<Index > > & F,
   std::vector<std::vector<Scalar > > & VC)
 {
-  using namespace std;
   // for using fseek/ftell, open with binary mode.
   FILE * wrl_file = fopen(wrl_file_name.c_str(),"rb");
   if(NULL==wrl_file)
@@ -68,8 +67,8 @@ IGL_INLINE bool igl::readWRL(
       fclose(wrl_file);
       return false;
     }
-    haystack = string(line);
-    still_comments = string::npos == haystack.find(needle);
+    haystack = std::string(line);
+    still_comments = std::string::npos == haystack.find(needle);
 
     // in case first vertex position is written in the same line.
     // i.e. "point[ %lf %lf %lf,"
@@ -108,7 +107,7 @@ IGL_INLINE bool igl::readWRL(
   fseek(wrl_file, 0, SEEK_SET);
   bool colorPerVertex = true;
   still_comments = true;
-  needle = string("colorPerVertex TRUE");
+  needle = std::string("colorPerVertex TRUE");
   while(still_comments)
   {
     long thisLine = ftell(wrl_file);
@@ -117,8 +116,8 @@ IGL_INLINE bool igl::readWRL(
       colorPerVertex = false;
       break;
     }
-    haystack = string(line);
-    still_comments = string::npos == haystack.find(needle);
+    haystack = std::string(line);
+    still_comments = std::string::npos == haystack.find(needle);
   }
   if(colorPerVertex)
   {
@@ -130,7 +129,7 @@ IGL_INLINE bool igl::readWRL(
     // Read lines until seeing "color ["
     // treat other lines in file as "comments"
     still_comments = true;
-    needle = string("color [");
+    needle = std::string("color [");
     while(still_comments)
     {
       long thisLine = ftell(wrl_file);
@@ -140,8 +139,8 @@ IGL_INLINE bool igl::readWRL(
         fclose(wrl_file);
         return false;
       }
-      haystack = string(line);
-      still_comments = string::npos == haystack.find(needle);
+      haystack = std::string(line);
+      still_comments = std::string::npos == haystack.find(needle);
 
       // in case first vertex position is written in the same line.
       // i.e. "color[ %lf %lf %lf,"
@@ -198,8 +197,8 @@ IGL_INLINE bool igl::readWRL(
       fclose(wrl_file);
       return false;
     }
-    haystack = string(line);
-    still_comments = string::npos == haystack.find(needle);
+    haystack = std::string(line);
+    still_comments = std::string::npos == haystack.find(needle);
 
     // in case first vertex position is written in the same line.
     // i.e. "coordIndex [ %d %d %d -1,"

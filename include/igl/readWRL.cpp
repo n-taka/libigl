@@ -160,7 +160,7 @@ IGL_INLINE bool igl::readWRL(
       floats_read = fscanf(wrl_file," %lf %lf %lf,",&r,&g,&b);
       if(floats_read == 3)
       {
-        vector<Scalar > color;
+        std::vector<Scalar > color;
         color.resize(3);
         color[0] = r;
         color[1] = g;
